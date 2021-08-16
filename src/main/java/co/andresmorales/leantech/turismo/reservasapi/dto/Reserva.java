@@ -42,6 +42,10 @@ public class Reserva {
 	@Setter
 	private short numeroMenores;
 	
+	@Getter
+	@Setter
+	private String email;
+	
 	public Reserva() {}
 
 	/**
