@@ -32,6 +32,8 @@ public class ReservaModel {
 	private short numeroHabitaciones;
 	private short numeroMenores;
 	
+	public ReservaModel() {	}
+	
 	/**
 	 * Crea una instancia del modelo sin el ID ya que es asignado por la base de datos
 	 * @param reserva DTO recibido
