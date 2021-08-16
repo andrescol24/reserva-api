@@ -46,6 +46,11 @@ public class Reserva {
 	@Setter
 	private short numeroMenores;
 
+	/**
+	 * Crea una instancia de la reserva obteniendo los datos del modelo
+	 * 
+	 * @param reservaModel modelo
+	 */
 	public Reserva(ReservaModel reservaModel) {
 		this.id = reservaModel.getId();
 		this.fechaIngreso = reservaModel.getFechaIngreso();
