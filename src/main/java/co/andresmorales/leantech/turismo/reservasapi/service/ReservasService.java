@@ -58,6 +58,22 @@ public class ReservasService {
 			return new ResponseEntity<>(new ReservaCreada(mensaje), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
+	
+	/**
+	 * Consulta una reserva por el ID
+	 * 
+	 * @param id Id de la reserva
+	 * @return {@link ResponseEntity} con la reserva consultada. En caso de no ser
+	 *         encontrada el ResponseEntity tendra un {@link HttpStatus#NOT_FOUND}
+	 */
+	public ResponseEntity<Reserva> consultarReserva(int id) {
+		Optional<ReservaModel> reservaModel = this.reservaRepository.findById(id);
+		if (reservaModel.isPresent()) {
+			return new ResponseEntity<>(new Reserva(reservaModel.get()), HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		}
+	}
 
 	/**
 	 * Valida la peticion de creacion y en caso de ser erronea devolvera un mensaje
@@ -114,21 +130,5 @@ public class ReservasService {
 	private void enviarEmailReservaNoCreada(Reserva peticion, String mensaje) {
 		log.info("EMAIL Reserva No Satisfactoria {}: Señor usuario, no pudimos crear su reserva: {}", peticion,
 				mensaje);
-	}
-
-	/**
-	 * Consulta una reserva por el ID
-	 * 
-	 * @param id Id de la reserva
-	 * @return {@link ResponseEntity} con la reserva consultada. En caso de no ser
-	 *         encontrada el ResponseEntity tendra un {@link HttpStatus#NOT_FOUND}
-	 */
-	public ResponseEntity<Reserva> consultarReserva(int id) {
-		Optional<ReservaModel> reservaModel = this.reservaRepository.findById(id);
-		if (reservaModel.isPresent()) {
-			return new ResponseEntity<>(new Reserva(reservaModel.get()), HttpStatus.OK);
-		} else {
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-		}
 	}
 }
