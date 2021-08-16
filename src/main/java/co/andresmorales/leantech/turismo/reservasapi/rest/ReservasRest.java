@@ -22,7 +22,7 @@ public class ReservasRest {
 	/**
 	 * Permite consultar una reserva
 	 * @param id ID de la reserva
-	 * @return 
+	 * @return Reserva
 	 */
 	@GetMapping("/consultar-reserva/{id}")
 	public ResponseEntity<Reserva> consultarReserva(@PathParam("id") Integer id) {
