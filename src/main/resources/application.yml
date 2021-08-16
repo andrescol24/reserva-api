@@ -1,6 +1,12 @@
 spring:
   application:
     name: reservas-api
+  datasource:
+    url: jdbc:h2:mem:turismodb
+    username: sa
+    password: password
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
 server:
   port: 4005
   servlet:
