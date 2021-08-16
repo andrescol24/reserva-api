@@ -16,10 +16,6 @@ public class Reserva {
 
 	@Getter
 	@Setter
-	private int id;
-
-	@Getter
-	@Setter
 	private Date fechaIngreso;
 
 	@Getter
@@ -45,6 +41,8 @@ public class Reserva {
 	@Getter
 	@Setter
 	private short numeroMenores;
+	
+	public Reserva() {}
 
 	/**
 	 * Crea una instancia de la reserva obteniendo los datos del modelo
@@ -52,7 +50,6 @@ public class Reserva {
 	 * @param reservaModel modelo
 	 */
 	public Reserva(ReservaModel reservaModel) {
-		this.id = reservaModel.getId();
 		this.fechaIngreso = reservaModel.getFechaIngreso();
 		this.fechaSalida = reservaModel.getFechaSalida();
 		this.totalDias = reservaModel.getTotalDias();
