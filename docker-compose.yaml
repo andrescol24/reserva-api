@@ -1,0 +1,13 @@
+version: "3.9" 
+services:
+    reservas-api:
+        build: .
+        ports:
+            - "4005:4005"
+        links:
+            - rabbit-mq
+    rabbit-mq:
+        image: rabbitmq:3.9.3-management
+        ports:
+            - "5672:5672"
+            - "15672:15672"
