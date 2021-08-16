@@ -5,13 +5,15 @@ import java.util.Optional;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import co.andresmorales.leantech.turismo.reservasapi.config.MQReservasConfig;
 import co.andresmorales.leantech.turismo.reservasapi.dto.Reserva;
-import co.andresmorales.leantech.turismo.reservasapi.dto.ReservaCreada;
 import co.andresmorales.leantech.turismo.reservasapi.model.ReservaModel;
 import co.andresmorales.leantech.turismo.reservasapi.repository.ReservaRepository;
 
@@ -25,40 +27,60 @@ import co.andresmorales.leantech.turismo.reservasapi.repository.ReservaRepositor
 @Service
 public class ReservasService {
 
-	private ReservaRepository reservaRepository;
 	private static final Logger log = LoggerFactory.getLogger(ReservasService.class);
 
+	private ReservaRepository reservaRepository;
+	private RabbitTemplate queueTemplate;
+
 	@Autowired
-	public ReservasService(ReservaRepository reservaRepository) {
+	public ReservasService(ReservaRepository reservaRepository, RabbitTemplate queueTemplate) {
 		this.reservaRepository = reservaRepository;
+		this.queueTemplate = queueTemplate;
 	}
 
 	/**
-	 * Permite crear una reserva
+	 * Agrega la peticion de creacion de la reserva en una cola para luego ser
+	 * procesada solo en caso de que la peticion sea correcta.
 	 * 
 	 * @param reserva Reserva a crear
-	 * @return {@link ResponseEntity} con el ID asignado
+	 * @return {@link ResponseEntity} Con un mensaje descriptivo:
+	 *         <ul>
+	 *         <li>HTTP STATUS 400: La peticion es incorrecta</li>
+	 *         <li>HTTP STATUS 202: Se agrego la peticion a la cola y sera
+	 *         notificado por email</li>
+	 *         </ul>
 	 */
-	public ResponseEntity<ReservaCreada> crearReserva(Reserva reserva) {
+	public ResponseEntity<String> crearReservaPublisher(Reserva reserva) {
+		Optional<String> mensajeError = this.validarPeticionCreacion(reserva);
+		if (mensajeError.isPresent()) {
+			return new ResponseEntity<>(mensajeError.get(), HttpStatus.BAD_REQUEST);
+		} else {
+			this.queueTemplate.convertAndSend(MQReservasConfig.EXCHANGE_NAME, MQReservasConfig.ROUTING_KEY_CREAR,
+					reserva);
+			return new ResponseEntity<>("Creación de la reserva en proceso.", HttpStatus.ACCEPTED);
+		}
+	}
+
+	/**
+	 * Obtiene los mensajes puesto en la cola
+	 * {@link MQReservasConfig#QUEUE_NAME_CREAR} y los procesa
+	 * 
+	 * @param reserva Reserva obtenida de la cola de mensajes
+	 */
+	@RabbitListener(queues = MQReservasConfig.QUEUE_NAME_CREAR)
+	public void crearReservaConsumer(Reserva reserva) {
 		try {
-			Optional<String> mensajeError = this.validarPeticionCreacion(reserva);
-			if (mensajeError.isPresent()) {
-				return new ResponseEntity<>(new ReservaCreada(mensajeError.get()), HttpStatus.BAD_REQUEST);
-			} else {
-				ReservaModel modelo = new ReservaModel(reserva);
-				this.reservaRepository.save(modelo);
-				log.info("Se creo una reserva -> {}", modelo);
-				this.enviarEmailReservaCreada(reserva.getEmail(), modelo);
-				return new ResponseEntity<>(new ReservaCreada(modelo.getId()), HttpStatus.OK);
-			}
+			ReservaModel modelo = new ReservaModel(reserva);
+			this.reservaRepository.save(modelo);
+			log.info("Se creo una reserva -> {}", modelo);
+			this.enviarEmailReservaCreada(reserva.getEmail(), modelo);
 		} catch (Exception e) {
 			log.error("Error creando la reserva", e);
 			String mensaje = "Ocurrio un error interno.";
 			this.enviarEmailReservaNoCreada(reserva, mensaje);
-			return new ResponseEntity<>(new ReservaCreada(mensaje), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
+
 	/**
 	 * Consulta una reserva por el ID
 	 * 
@@ -89,7 +111,7 @@ public class ReservasService {
 		if (reserva.getFechaSalida() == null) {
 			return Optional.of("La fecha de salida es requerida.");
 		}
-		if(reserva.getFechaIngreso().after(reserva.getFechaSalida())) {
+		if (reserva.getFechaIngreso().after(reserva.getFechaSalida())) {
 			return Optional.of("La fecha de salida debe de ser posterior a la fecha de ingreso.");
 		}
 		if (!EmailValidator.getInstance().isValid(reserva.getEmail())) {
@@ -115,8 +137,10 @@ public class ReservasService {
 	 * 
 	 * @param email   Email del destinatario
 	 * @param reserva Reserva creada
+	 * @throws InterruptedException
 	 */
-	private void enviarEmailReservaCreada(String email, ReservaModel reserva) {
+	private void enviarEmailReservaCreada(String email, ReservaModel reserva) throws InterruptedException {
+		Thread.sleep(5000);
 		log.info("EMAIL Reserva Satisfactoria {}: Su numero de reserva es #{}. ¡Lo esperamos con ansias!", email,
 				reserva.getId());
 	}

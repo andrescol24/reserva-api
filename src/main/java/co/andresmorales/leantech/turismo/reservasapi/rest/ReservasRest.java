@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.andresmorales.leantech.turismo.reservasapi.dto.Reserva;
-import co.andresmorales.leantech.turismo.reservasapi.dto.ReservaCreada;
 import co.andresmorales.leantech.turismo.reservasapi.service.ReservasService;
 
 /**
@@ -47,8 +46,8 @@ public class ReservasRest {
 	 *         ser creada
 	 */
 	@PostMapping("/crear-reserva")
-	public ResponseEntity<ReservaCreada> crearReserva(@RequestBody Reserva reserva) {
-		return this.servicio.crearReserva(reserva);
+	public ResponseEntity<String> crearReserva(@RequestBody Reserva reserva) {
+		return this.servicio.crearReservaPublisher(reserva);
 	}
 
 }
