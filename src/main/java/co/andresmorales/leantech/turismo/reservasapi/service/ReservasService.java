@@ -1,5 +1,6 @@
 package co.andresmorales.leantech.turismo.reservasapi.service;
 
+import java.util.Date;
 import java.util.Optional;
 
 import org.apache.commons.validator.routines.EmailValidator;
@@ -111,6 +112,9 @@ public class ReservasService {
 		if (reserva.getFechaSalida() == null) {
 			return Optional.of("La fecha de salida es requerida.");
 		}
+		if(reserva.getFechaIngreso().before(new Date())) {
+			return Optional.of("La fecha de ingreso debe ser posterior a hoy.");
+		}
 		if (reserva.getFechaIngreso().after(reserva.getFechaSalida())) {
 			return Optional.of("La fecha de salida debe de ser posterior a la fecha de ingreso.");
 		}
@@ -139,8 +143,7 @@ public class ReservasService {
 	 * @param reserva Reserva creada
 	 * @throws InterruptedException
 	 */
-	private void enviarEmailReservaCreada(String email, ReservaModel reserva) throws InterruptedException {
-		Thread.sleep(5000);
+	private void enviarEmailReservaCreada(String email, ReservaModel reserva) {
 		log.info("EMAIL Reserva Satisfactoria {}: Su numero de reserva es #{}. ¡Lo esperamos con ansias!", email,
 				reserva.getId());
 	}

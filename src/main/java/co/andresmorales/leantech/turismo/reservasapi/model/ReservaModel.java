@@ -18,7 +18,7 @@ import lombok.Setter;
  * @author Andres Morales
  *
  */
-@Entity
+@Entity(name = "RESERVA")
 public class ReservaModel {
 
 	@Id
