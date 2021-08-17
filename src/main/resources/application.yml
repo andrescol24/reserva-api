@@ -8,7 +8,16 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
   rabbitmq:
-    addresses: rabbit-mq:5672
+    addresses: rabbit-mq:5672  mail:    host: smtp.gmail.com
+    port: 587
+    username: ${SMTP.USERNAME}
+    password: ${SMTP.PASSWORD}
+    properties:      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.smtp.auth: true
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
 server:
   port: 4005
   servlet:

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reserva Turismo</title>
+</head>
+<body>
+    <h1>Confirmación de reserva</h1>
+    <p><strong>Titular: </strong><span th:text="${reserva.titularReserva}"></span></p>
+    <p><strong>Fecha de inicio de la estadia: </strong><span th:text="${reserva.fechaIngreso}"></span></p>
+    <p><strong>Fecha en la que finaliza la estadia: </strong><span th:text="${reserva.fechaSalida}"></span></p>
+    <p><strong>Cantidad de personas: </strong><span th:text="${reserva.numeroPersonas}"></span></p>
+    <p><strong>Cantidad de habitaciones: </strong><span th:text="${reserva.numeroHabitaciones}"></span></p>
+    <p><strong>ID DE RESERVA: </strong><span th:text="${reserva.id}"></span></p>
+    <h2>¡Te esperamos!</h2>
+</body>
+</html>

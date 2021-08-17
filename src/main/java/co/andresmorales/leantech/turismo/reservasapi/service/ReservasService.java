@@ -1,7 +1,14 @@
 package co.andresmorales.leantech.turismo.reservasapi.service;
 
+import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 
 import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
@@ -11,7 +18,11 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 import co.andresmorales.leantech.turismo.reservasapi.config.MQReservasConfig;
 import co.andresmorales.leantech.turismo.reservasapi.dto.Reserva;
@@ -29,14 +40,20 @@ import co.andresmorales.leantech.turismo.reservasapi.repository.ReservaRepositor
 public class ReservasService {
 
 	private static final Logger log = LoggerFactory.getLogger(ReservasService.class);
+	private static final String RESERVA = "reserva";
 
 	private ReservaRepository reservaRepository;
 	private RabbitTemplate queueTemplate;
+	private JavaMailSender sender;
+	private TemplateEngine template;
 
 	@Autowired
-	public ReservasService(ReservaRepository reservaRepository, RabbitTemplate queueTemplate) {
+	public ReservasService(ReservaRepository reservaRepository, RabbitTemplate queueTemplate, JavaMailSender sender,
+			TemplateEngine template) {
 		this.reservaRepository = reservaRepository;
 		this.queueTemplate = queueTemplate;
+		this.template = template;
+		this.sender = sender;
 	}
 
 	/**
@@ -106,13 +123,29 @@ public class ReservasService {
 	 *         vacio en caso de que sea valida
 	 */
 	private Optional<String> validarPeticionCreacion(Reserva reserva) {
+		Calendar fechaInicio = Calendar.getInstance();
+		fechaInicio.setTime(reserva.getFechaIngreso());
+		fechaInicio.set(Calendar.HOUR_OF_DAY, 0);
+		fechaInicio.set(Calendar.MINUTE, 0);
+		fechaInicio.set(Calendar.SECOND, 0);
+		fechaInicio.set(Calendar.MILLISECOND, 0);
+		reserva.setFechaIngreso(fechaInicio.getTime());
+		
+		Calendar fechaFin = Calendar.getInstance();
+		fechaFin.setTime(reserva.getFechaSalida());
+		fechaFin.set(Calendar.HOUR_OF_DAY, 23);
+		fechaFin.set(Calendar.MINUTE, 59);
+		fechaFin.set(Calendar.SECOND, 59);
+		fechaFin.set(Calendar.MILLISECOND, 999);
+		reserva.setFechaSalida(fechaFin.getTime());
+		
 		if (reserva.getFechaIngreso() == null) {
 			return Optional.of("La fecha de ingreso es requerida.");
 		}
 		if (reserva.getFechaSalida() == null) {
 			return Optional.of("La fecha de salida es requerida.");
 		}
-		if(reserva.getFechaIngreso().before(new Date())) {
+		if (reserva.getFechaIngreso().before(new Date())) {
 			return Optional.of("La fecha de ingreso debe ser posterior a hoy.");
 		}
 		if (reserva.getFechaIngreso().after(reserva.getFechaSalida())) {
@@ -141,11 +174,22 @@ public class ReservasService {
 	 * 
 	 * @param email   Email del destinatario
 	 * @param reserva Reserva creada
+	 * @throws MessagingException
 	 * @throws InterruptedException
 	 */
-	private void enviarEmailReservaCreada(String email, ReservaModel reserva) {
-		log.info("EMAIL Reserva Satisfactoria {}: Su numero de reserva es #{}. ¡Lo esperamos con ansias!", email,
-				reserva.getId());
+	private void enviarEmailReservaCreada(String email, ReservaModel reserva) throws MessagingException {
+		MimeMessage mimeMessage = this.sender.createMimeMessage();
+		MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+		helper.addTo(email);
+		helper.setSubject(String.format("Confirmación de Reserva #%d", reserva.getId()));
+
+		Map<String, Object> parametros = new HashMap<>();
+		Locale locale = new Locale("es", "CO");
+		parametros.put(RESERVA, reserva);
+		Context context = new Context(locale, parametros);
+		String mensaje = this.template.process(RESERVA, context);
+		helper.setText(mensaje, true);
+		this.sender.send(helper.getMimeMessage());
 	}
 
 	/**
@@ -155,7 +199,23 @@ public class ReservasService {
 	 * @param reserva Reserva creada
 	 */
 	private void enviarEmailReservaNoCreada(Reserva peticion, String mensaje) {
-		log.info("EMAIL Reserva No Satisfactoria {}: Señor usuario, no pudimos crear su reserva: {}", peticion,
-				mensaje);
+		try {
+			MimeMessage mimeMessage = this.sender.createMimeMessage();
+			MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+			helper.addTo(peticion.getEmail());
+			helper.setSubject("Reserva no realizada :(");
+
+			Map<String, Object> parametros = new HashMap<>();
+			Locale locale = new Locale("es", "CO");
+			parametros.put(RESERVA, peticion);
+			parametros.put("mensaje", mensaje);
+			Context context = new Context(locale, parametros);
+			String mensajeHtml = this.template.process("reserva_no_creada", context);
+			helper.setText(mensajeHtml, true);
+			this.sender.send(helper.getMimeMessage());
+		} catch (MessagingException e) {
+			log.error("Error enviando email de error", e);
+		}
+
 	}
 }
