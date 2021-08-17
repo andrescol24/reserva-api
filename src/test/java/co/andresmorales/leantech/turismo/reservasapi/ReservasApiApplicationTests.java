@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
+import org.springframework.mail.javamail.JavaMailSender;
 
 import com.github.fridujo.rabbitmq.mock.MockConnectionFactory;
 
@@ -29,6 +30,9 @@ class ReservasApiApplicationTests {
 	@MockBean
 	private RabbitTemplate template;
 	
+	@MockBean
+	private JavaMailSender sender;
+	
 	@Bean
     ConnectionFactory connectionFactory() {
         return new CachingConnectionFactory(new MockConnectionFactory());
@@ -39,7 +43,9 @@ class ReservasApiApplicationTests {
 		// ANTES
 		Reserva reserva = new Reserva();
 		reserva.setEmail("pepito@hotmail.com");
-		reserva.setFechaIngreso(new Date());
+		Calendar fechaIngreso = Calendar.getInstance();
+		fechaIngreso.add(Calendar.DAY_OF_YEAR, 1);
+		reserva.setFechaIngreso(fechaIngreso.getTime());
 		
 		Calendar calendar = Calendar.getInstance();
 		calendar.add(Calendar.DAY_OF_YEAR, 3);
