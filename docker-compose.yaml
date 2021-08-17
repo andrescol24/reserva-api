@@ -6,6 +6,9 @@ services:
             - "4005:4005"
         links:
             - rabbit-mq
+        environment:
+            - SMTP.USERNAME=gmail_from
+            - SMTP.PASSWORD=gmail_app_key
     rabbit-mq:
         image: rabbitmq:3.9.3-management
         ports:

@@ -23,5 +23,5 @@ server:
   servlet:
     context-path: /reservas
 ---
-spring:  profiles:    active:    - development
+spring:  profiles: development
   rabbitmq:    addresses: localhost:5672
