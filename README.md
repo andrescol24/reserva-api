@@ -49,7 +49,15 @@ Consulta una reserva creada previamente
         }
 
 ## Compilación y Ejecución
-El unico requisito para poder ejecutar completamente el microservicio es tener el JDK de Java 16 y Docker instalado (Docker o Docker Desktop en Windows)
+Los requisitos para poder ejecutar completamente el microservicio son los siguientes:
+
+1. Tener el JDK de Java 16 instalado
+2. Tener Docker instalado (Docker o Docker Desktop en Windows)
+3. Generar y configurar una llave de aplicación de Gmail para el envio de correo electronico:
+    - En gestionar cuenta de Google > Seguridad > Contraseñas de aplicaciones generar una para Gmail
+    - Configurar el correo de gmail en el archivo docker-compose.yml en la variable de entorno SMTP.USERNAME
+    - Configurar la contraseña de aplicación en el archivo docker-compose.yml en la variable de entorno SMTP.PASSWORD
+    - Con el correo configurado se enviaran los correos electronicos.
 
 Luego de haber descargado el codigo ejecutar ```mvn clean package``` para generar el archivo .jar.
 
